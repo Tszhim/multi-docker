@@ -2,14 +2,22 @@ sudo: required
 services:
   - docker
 
+# Create development image for client.
 before_install:
   - docker build -t tszchan/react-test -f ./client/Dockerfile.dev ./client
 
+# Run tests.
 script:
   - docker run -e CI=true tszchan/react-test npm test
 
+# If test suite passes, build production images and upload to Docker Hub.
 after_success:
   - docker build -t tszchan/multi-client ./client 
   - docker build -t tszchan/multi-nginx ./nginx
   - docker build -t tszchan/multi-server ./server
   - docker build -t tszchan/multi-worker ./worker
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  - docker push tszchan/multi-client
+  - docker push tszchan/multi-nginx
+  - docker push tszchan/multi-server
+  - docker push tszchan/multi-worker 
